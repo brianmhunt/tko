@@ -17,7 +17,8 @@ export interface Subscribable<T> {
   equalityComparer: (oldValue: T, newValue: T) => boolean
   afterSubscriptionRemove: (event: string) => void
   beforeSubscriptionAdd: (event: string) => void
-  subscribe: (callback, callbackTarget?, event?: string) => Subscription<T>
+  subscribe: (callback: (value: T) => void, callbackTarget?: any, event?: string) => Subscription<T>
+  fn: object
 }
 
 export default class Subscription<T> {

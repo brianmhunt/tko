@@ -26,7 +26,7 @@ type Subscriber = (value: any) => void | TC39Callback
 
 export const defaultEvent = 'change'
 
-const ko_subscribable_fn: Subscribable<T> = {
+const ko_subscribable_fn = {
   [SUBSCRIBABLE_SYM]: true,
   [Symbol.observable] () { return this },
 

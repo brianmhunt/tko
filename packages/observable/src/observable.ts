@@ -12,17 +12,22 @@ import { subscribable, defaultEvent } from './subscribable'
 import { LATEST_VALUE } from './Subscription'
 import { valuesArePrimitiveAndEqual } from './extenders.js'
 
+type MaybeObservable<T> = T | IObservable<T>
+
 interface IObservable<T> {
-  (this: IObservable<T>, ...args: any[]): IObservable<T>
+  (this: IObservable<T>, ...args: any[]): T|IObservable<T>
   isDifferent: (latest: T, other: T) => boolean
   [LATEST_VALUE]: T
   valueWillMutate: () => void
   valueHasMutated: () => void
   isWriteable: boolean
+  fn: object
+  peek: () => T
+  value: () => T
 }
 
-export function observable<T> (initialValue: T) : Observable<T> {
-  const Observable: IObservable<T> = function (this: IObservable<T>, ...args: any[]) : T|IObservable<T> {
+export function observable<T> (initialValue: T) : IObservable<T> {
+  const Observable  = <IObservable<T>>function (this: IObservable<T>, ...args: any[]) : MaybeObservable<T> {
     if (args.length > 0) {
             // Write
             // Ignore writes if the value hasn't changed
@@ -154,7 +159,9 @@ observable.fn[protoProperty] = observable
 // isObservable will be `true`.
 observable.observablePrototypes = new Set([observable])
 
-export function isObservable<T> (instance: T|IObservable<T>) {
+export function isObservable<T extends IObservable<T>>(obs: T): true
+export function isObservable(notObs: any): false
+export function isObservable (instance: any) {
   const proto = typeof instance === 'function' && instance[protoProperty]
   if (proto && !observable.observablePrototypes.has(proto)) {
     throw Error('Invalid object that looks like an observable; possibly from another Knockout instance')
@@ -162,16 +169,16 @@ export function isObservable<T> (instance: T|IObservable<T>) {
   return !!proto
 }
 
-export function unwrap<T> (value: T|IObservable<T>) {
-  return isObservable(value) ? value() : value
+export function unwrap<T> (value: MaybeObservable<T>) : T {
+  return isObservable(value) ? (value as IObservable<T>).call(value) : <T>value
 }
 
-export function peek<T> (value: T|IObservable<T>) {
-  return isObservable(value) ? value.peek() : value
+export function peek<T> (value: MaybeObservable<T>) : T {
+  return isObservable(value) ? (<IObservable<T>>value).peek() : <T>value
 }
 
-export function isWriteableObservable<T> (instance: T|IObservable<T>) {
-  return isObservable(instance) && instance.isWriteable
+export function isWriteableObservable<T> (instance: MaybeObservable<T>) {
+  return isObservable(instance) && (<IObservable<T>>instance).isWriteable
 }
 
 export { isWriteableObservable as isWritableObservable }
